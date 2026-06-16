@@ -100,7 +100,10 @@ async def check_all_tables_exist(session: AsyncSession | Session, schema: str = 
 
 async def create_db_and_tables():
     async with engine.begin() as conn:
-        await conn.execute(text("ALTER TYPE buystatus ADD VALUE IF NOT EXISTS 'PENDING_PAYMENT'"))
-        await conn.execute(text("ALTER TYPE buystatus ADD VALUE IF NOT EXISTS 'PAYMENT_EXPIRED'"))
-        await conn.execute(text("ALTER TYPE buystatus ADD VALUE IF NOT EXISTS 'PAYMENT_FAILED'"))
         await conn.run_sync(Base.metadata.create_all)
+
+        enum_exists = await conn.scalar(text("SELECT to_regtype('buystatus') IS NOT NULL"))
+        if enum_exists:
+            await conn.execute(text("ALTER TYPE buystatus ADD VALUE IF NOT EXISTS 'PENDING_PAYMENT'"))
+            await conn.execute(text("ALTER TYPE buystatus ADD VALUE IF NOT EXISTS 'PAYMENT_EXPIRED'"))
+            await conn.execute(text("ALTER TYPE buystatus ADD VALUE IF NOT EXISTS 'PAYMENT_FAILED'"))

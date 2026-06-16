@@ -21,6 +21,10 @@ class Item(Base):
     is_sold = Column(Boolean, nullable=False, default=False)
     is_new = Column(Boolean, nullable=False, default=True)
     description = Column(String, nullable=False)
+    is_pinned = Column(Boolean, nullable=False, default=False)
+    pin_group = Column(String, nullable=True)
+    pin_label = Column(String, nullable=True)
+    pin_priority = Column(Integer, nullable=False, default=999)
 
     __table_args__ = (
         CheckConstraint('price > 0', name='check_price_positive'),
@@ -42,6 +46,10 @@ class ItemDTO(BaseModel):
     is_sold: bool | None = None
     is_new: bool | None = None
     description: str | None = None
+    is_pinned: bool | None = None
+    pin_group: str | None = None
+    pin_label: str | None = None
+    pin_priority: int | None = None
 
 
 class ItemAvailabilityDTO(BaseModel):
@@ -62,6 +70,9 @@ class ItemAdmin(ModelView, model=Item):
                             Item.item_type,
                             Item.is_sold,
                             Item.is_new,
+                            Item.is_pinned,
+                            Item.pin_group,
+                            Item.pin_priority,
                             Item.price,
                             Item.description]
     can_delete = False

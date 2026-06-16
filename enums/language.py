@@ -7,13 +7,14 @@ class Language(str, Enum):
     DE = "de"
     IT = "it"
     ZH = "zh"
+    VI = "vi"
 
     @staticmethod
     def from_locale(locale: str) -> 'Language':
         try:
             return Language(locale.lower())
         except ValueError:
-            return Language.EN
+            return Language.VI
 
     def get_country_code(self):
         match self:
@@ -21,6 +22,8 @@ class Language(str, Enum):
                 return "US"
             case Language.ZH:
                 return "CN"
+            case Language.VI:
+                return "VN"
             case _:
                 return self.name
 

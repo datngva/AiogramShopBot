@@ -19,6 +19,9 @@ from repositories.subcategory import SubcategoryRepository
 from services.notification import NotificationService
 from utils.utils import get_text, get_bot_photo_id
 
+START_PHOTO_TARGET = "start_photo"
+START_PHOTO_FILE = "static/no_image.jpeg"
+
 
 class MediaService:
     @staticmethod
@@ -55,6 +58,13 @@ class MediaService:
                 )
             )
         kb_builder.button(
+            text="🖼 Sửa ảnh /start",
+            callback_data=MediaManagementCallback.create(
+                level=2,
+                media_target=START_PHOTO_TARGET
+            )
+        )
+        kb_builder.button(
             text=get_text(language, BotEntity.COMMON, "back_button"),
             callback_data=AdminMenuCallback.create(0)
         )
@@ -71,7 +81,11 @@ class MediaService:
             entity_id=callback_data.entity_id,
             keyboard_button=callback_data.keyboard_button.value if callback_data.keyboard_button else None)
         await state.set_state(MediaManagementStates.media)
-        if callback_data.entity_type == EntityType.CATEGORY:
+        if callback_data.media_target == START_PHOTO_TARGET:
+            entity_type_localized = "ảnh /start"
+            entity = CategoryDTO(name="ảnh chào mừng")
+            await state.update_data(media_target=START_PHOTO_TARGET)
+        elif callback_data.entity_type == EntityType.CATEGORY:
             entity = await CategoryRepository.get_by_id(callback_data.entity_id, session)
             entity_type_localized = callback_data.entity_type.get_localized(language)
         elif callback_data.entity_type == EntityType.SUBCATEGORY:
@@ -112,6 +126,16 @@ class MediaService:
             file_id = message.animation.file_id
             prefix = "2"
         state_data = await state.get_data()
+        if state_data.get("media_target") == START_PHOTO_TARGET:
+            with open(START_PHOTO_FILE, "w") as file:
+                file.write(file_id)
+            await state.clear()
+            kb_builder.button(
+                text=get_text(language, BotEntity.COMMON, "back_button"),
+                callback_data=MediaManagementCallback.create(0)
+            )
+            return "✅ Đã cập nhật ảnh /start. Anh gõ /start để kiểm tra ảnh mới nhé.", kb_builder
+
         media = f"{prefix}{file_id}"
         entity_type = state_data.get("entity_type")
         if entity_type is None:

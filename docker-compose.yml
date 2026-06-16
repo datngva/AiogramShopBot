@@ -1,9 +1,11 @@
 services:
   caddy:
+    profiles:
+      - caddy
     image: caddy
     ports:
       - "80:80"
-      - "443:443"
+      - "8443:443"
     networks:
       - caddy
     volumes:
@@ -19,16 +21,15 @@ services:
     env_file:
       - .env
     labels:
-      caddy: YOUR-DOMAIN-GOES-HERE
+      caddy: bot.93light.com
       caddy.reverse_proxy: "bot:5000"
-    depends_on:
-      - caddy
     networks:
       - caddy
     ports:
       - "127.0.0.1:5000:5000" # ${WEBAPP_PORT}:${WEBAPP_PORT}
     volumes:
       - ./i18n:/bot/i18n
+      - ./static:/bot/static
     command: [ "python", "-u", "run.py" ]
     restart: always
 

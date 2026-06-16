@@ -20,7 +20,7 @@ from repositories.category import CategoryRepository
 from repositories.item import ItemRepository
 from repositories.subcategory import SubcategoryRepository
 from services.media import MediaService
-from utils.utils import get_text
+from utils.utils import get_text, get_bot_photo_id
 
 
 class ItemService:
@@ -205,3 +205,74 @@ class ItemService:
             KeyboardButton.ALL_CATEGORIES, session
         )
         return MediaService.convert_to_media(button_media.media_id, caption=caption), kb_builder
+
+    @staticmethod
+    async def get_pinned_products(session: AsyncSession,
+                                  language: Language) -> tuple[InputMediaPhoto, InlineKeyboardBuilder]:
+        pinned_items = await ItemRepository.get_pinned_items(session)
+        kb_builder = InlineKeyboardBuilder()
+        default_media = f"0{get_bot_photo_id()}"
+        if not pinned_items:
+            caption = "📌 <b>Hiện chưa có sản phẩm nổi bật.</b>\n\nAnh/chị quay lại sau nhé, shop sẽ ghim hàng hot tại đây."
+            return MediaService.convert_to_media(default_media, caption=caption), kb_builder
+
+        category_map = {
+            category.id: category
+            for category in await CategoryRepository.get_by_ids(
+                list({item.category_id for item in pinned_items if item.category_id is not None}),
+                session
+            )
+        }
+        subcategory_map = {
+            subcategory.id: subcategory
+            for subcategory in await SubcategoryRepository.get_by_ids(
+                list({item.subcategory_id for item in pinned_items if item.subcategory_id is not None}),
+                session
+            )
+        }
+        group_badges = {
+            "hot": "🔥 Hot",
+            "sale": "⚡ Sale",
+            "new": "🆕 Mới về",
+            "push": "📦 Nên mua",
+        }
+
+        featured_lines: list[str] = []
+        seen_subcategories: set[int] = set()
+        button_media_id = None
+        for item in pinned_items:
+            if item.subcategory_id is None or item.subcategory_id in seen_subcategories:
+                continue
+            seen_subcategories.add(item.subcategory_id)
+            subcategory = subcategory_map.get(item.subcategory_id)
+            category = category_map.get(item.category_id)
+            available_qty = await ItemRepository.get_available_qty(item.item_type, item.category_id, item.subcategory_id, session)
+            if available_qty <= 0:
+                continue
+            if button_media_id is None and subcategory is not None:
+                button_media_id = subcategory.media_id
+            badge = group_badges.get((item.pin_group or "").lower(), "📌 Nổi bật")
+            label = item.pin_label or badge
+            subcategory_name = subcategory.name if subcategory is not None else f"Sản phẩm #{item.subcategory_id}"
+            category_name = category.name if category is not None else "Khác"
+            featured_lines.append(
+                f"{badge} <b>{subcategory_name}</b> — {label}\n"
+                f"   🗂️ {category_name} | 💰 {config.CURRENCY.get_localized_symbol()}{item.price:,.0f} | 📦 {available_qty}"
+            )
+            kb_builder.button(
+                text=f"{badge} {subcategory_name}",
+                callback_data=AllCategoriesCallback.create(
+                    level=3,
+                    item_type=item.item_type,
+                    category_id=item.category_id,
+                    subcategory_id=item.subcategory_id,
+                )
+            )
+
+        kb_builder.adjust(1)
+        if not featured_lines:
+            caption = "📌 <b>Hiện chưa có sản phẩm nổi bật.</b>\n\nTạm thời các sản phẩm ghim đang hết hàng."
+            return MediaService.convert_to_media(default_media, caption=caption), kb_builder
+        caption = "📌 <b>Sản phẩm nổi bật</b>\n\n" + "\n\n".join(featured_lines)
+        media_id = button_media_id or default_media
+        return MediaService.convert_to_media(media_id, caption=caption), kb_builder

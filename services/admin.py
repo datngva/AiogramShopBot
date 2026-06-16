@@ -41,8 +41,14 @@ class AdminService:
                 max_page_method = SubcategoryRepository.get_maximum_page(None, filters, session)
         for entity in entities:
             if isinstance(callback_data, InventoryManagementCallback):
+                if callback_data.level == 4:
+                    next_level = 5
+                elif callback_data.level == 7:
+                    next_level = 8
+                else:
+                    next_level = 3
                 kb_builder.button(text=entity.name, callback_data=InventoryManagementCallback.create(
-                    level=3,
+                    level=next_level,
                     entity_type=callback_data.entity_type,
                     entity_id=entity.id,
                     page=callback_data.page

@@ -108,6 +108,65 @@ class ItemRepository:
         session.add_all(items)
 
     @staticmethod
+    async def get_unsold_by_subcategory_id(subcategory_id: int, session: AsyncSession) -> list[ItemDTO]:
+        stmt = (
+            select(Item)
+            .where(Item.subcategory_id == subcategory_id, Item.is_sold == False)
+            .order_by(Item.is_pinned.desc(), Item.pin_priority.asc(), Item.id)
+        )
+        items = await session_execute(stmt, session)
+        return [ItemDTO.model_validate(item, from_attributes=True) for item in items.scalars().all()]
+
+    @staticmethod
+    async def update_unsold_description(subcategory_id: int, description: str, session: AsyncSession):
+        stmt = update(Item).where(Item.subcategory_id == subcategory_id, Item.is_sold == False).values(description=description)
+        await session_execute(stmt, session)
+
+    @staticmethod
+    async def update_unsold_price(subcategory_id: int, price: float, session: AsyncSession):
+        stmt = update(Item).where(Item.subcategory_id == subcategory_id, Item.is_sold == False).values(price=price)
+        await session_execute(stmt, session)
+
+    @staticmethod
+    async def update_unsold_pin_metadata(subcategory_id: int,
+                                         session: AsyncSession,
+                                         is_pinned: bool,
+                                         pin_group: str | None,
+                                         pin_label: str | None,
+                                         pin_priority: int):
+        stmt = (
+            update(Item)
+            .where(Item.subcategory_id == subcategory_id, Item.is_sold == False)
+            .values(
+                is_pinned=is_pinned,
+                pin_group=pin_group,
+                pin_label=pin_label,
+                pin_priority=pin_priority,
+            )
+        )
+        await session_execute(stmt, session)
+
+    @staticmethod
+    async def clear_unsold_pin_metadata(subcategory_id: int, session: AsyncSession):
+        stmt = (
+            update(Item)
+            .where(Item.subcategory_id == subcategory_id, Item.is_sold == False)
+            .values(
+                is_pinned=False,
+                pin_group=None,
+                pin_label=None,
+                pin_priority=999,
+            )
+        )
+        await session_execute(stmt, session)
+
+    @staticmethod
+    async def delete_unsold_limit(subcategory_id: int, count: int, session: AsyncSession):
+        subquery = select(Item.id).where(Item.subcategory_id == subcategory_id, Item.is_sold == False).order_by(Item.id.desc()).limit(count)
+        stmt = delete(Item).where(Item.id.in_(subquery))
+        await session_execute(stmt, session)
+
+    @staticmethod
     async def get_new(session: AsyncSession) -> list[ItemDTO]:
         stmt = select(Item).where(Item.is_new == True)
         items = await session_execute(stmt, session)
@@ -116,6 +175,16 @@ class ItemRepository:
     @staticmethod
     async def get_in_stock(session: AsyncSession) -> list[ItemDTO]:
         stmt = select(Item).where(Item.is_sold == False)
+        items = await session_execute(stmt, session)
+        return [ItemDTO.model_validate(item, from_attributes=True) for item in items.scalars().all()]
+
+    @staticmethod
+    async def get_pinned_items(session: AsyncSession) -> list[ItemDTO]:
+        stmt = (
+            select(Item)
+            .where(Item.is_sold == False, Item.is_pinned == True)
+            .order_by(Item.pin_priority.asc(), Item.subcategory_id.asc(), Item.id.asc())
+        )
         items = await session_execute(stmt, session)
         return [ItemDTO.model_validate(item, from_attributes=True) for item in items.scalars().all()]
 

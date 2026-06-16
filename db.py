@@ -27,6 +27,7 @@ from models.coupon import Coupon
 from models.shipping_option import ShippingOption
 from models.review import Review
 from models.referral import ReferralBonus
+from models.bank_payment import BankPayment
 
 url = f"postgresql+asyncpg://{config.DB_USER}:{config.DB_PASS}@{config.DB_HOST}:{config.DB_PORT}/{config.DB_NAME}"
 engine = create_async_engine(url, echo=True)
@@ -98,9 +99,8 @@ async def check_all_tables_exist(session: AsyncSession | Session, schema: str = 
 
 
 async def create_db_and_tables():
-    async with get_db_session() as session:
-        if await check_all_tables_exist(session):
-            pass
-        else:
-            async with engine.begin() as conn:
-                await conn.run_sync(Base.metadata.create_all)
+    async with engine.begin() as conn:
+        await conn.execute(text("ALTER TYPE buystatus ADD VALUE IF NOT EXISTS 'PENDING_PAYMENT'"))
+        await conn.execute(text("ALTER TYPE buystatus ADD VALUE IF NOT EXISTS 'PAYMENT_EXPIRED'"))
+        await conn.execute(text("ALTER TYPE buystatus ADD VALUE IF NOT EXISTS 'PAYMENT_FAILED'"))
+        await conn.run_sync(Base.metadata.create_all)

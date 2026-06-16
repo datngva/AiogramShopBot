@@ -33,6 +33,7 @@ from repositories.subcategory import SubcategoryRepository
 from repositories.user import UserRepository
 from services.media import MediaService
 from services.notification import NotificationService
+from services.sepay import SePayService
 from utils.utils import get_text
 from utils.utils import get_bot_photo_id
 
@@ -275,16 +276,35 @@ class CartService:
         confirm_text = get_text(language, BotEntity.COMMON, "confirm")
         if has_physical is False or (
                 has_physical is True and shipping_address is not None and shipping_option is not None):
-            confirm_button = InlineKeyboardButton(text=confirm_text,
-                                                  callback_data=CartCallback.create(
-                                                      level=6,
-                                                      shipping_option_id=callback_data.shipping_option_id,
-                                                      confirmation=True).pack())
+            if config.SEPAY_ENABLED:
+                confirm_button = InlineKeyboardButton(
+                    text="💎 Thanh toán full — giá tốt nhất",
+                    callback_data=CartCallback.create(
+                        level=6,
+                        shipping_option_id=callback_data.shipping_option_id,
+                        payment_type=SePayService.PAYMENT_TYPE_FULL,
+                        confirmation=True).pack())
+                deposit_button = InlineKeyboardButton(
+                    text="🤝 Đặt cọc 30% — linh hoạt giữ hàng (+5%)",
+                    callback_data=CartCallback.create(
+                        level=6,
+                        shipping_option_id=callback_data.shipping_option_id,
+                        payment_type=SePayService.PAYMENT_TYPE_DEPOSIT,
+                        confirmation=True).pack())
+            else:
+                confirm_button = InlineKeyboardButton(text=confirm_text,
+                                                      callback_data=CartCallback.create(
+                                                          level=6,
+                                                          shipping_option_id=callback_data.shipping_option_id,
+                                                          confirmation=True).pack())
+                deposit_button = None
         else:
             confirm_button = InlineKeyboardButton(text=confirm_text,
                                                   callback_data=CartCallback.create(level=4).pack())
         kb_builder = InlineKeyboardBuilder()
         kb_builder.add(confirm_button)
+        if 'deposit_button' in locals() and deposit_button is not None:
+            kb_builder.add(deposit_button)
         kb_builder.button(text=get_text(language, BotEntity.COMMON, "cancel"),
                           callback_data=CartCallback.create(level=0))
         if coupon_id is None:
@@ -339,6 +359,60 @@ class CartService:
             total_discount_amount = cart_total_price_before_discount - cart_total_price
         is_enough_money = (user.top_up_amount - user.consume_records) >= cart_total_price
         kb_builder = InlineKeyboardBuilder()
+        if callback_data.confirmation and len(out_of_stock) == 0 and config.SEPAY_ENABLED:
+            payment_type = callback_data.payment_type or SePayService.PAYMENT_TYPE_FULL
+            payment_amount = cart_total_price
+            order_total_amount = cart_total_price
+            remaining_amount = None
+            if payment_type == SePayService.PAYMENT_TYPE_DEPOSIT:
+                order_total_amount, payment_amount, remaining_amount = SePayService.calculate_deposit_amounts(cart_total_price)
+            buy_dto = BuyDTO(buyer_id=user.id,
+                             total_price=order_total_amount,
+                             discount=total_discount_amount,
+                             coupon_id=coupon_id,
+                             shipping_address=state_data.get('shipping_address'),
+                             shipping_option_id=shipping_option.id if shipping_option else None,
+                             status=BuyStatus.PENDING_PAYMENT)
+            buy_dto = await BuyRepository.create(buy_dto, session)
+            for cart_item in cart_items:
+                purchased_items = await ItemRepository.get_purchased_items(cart_item.item_type,
+                                                                           cart_item.category_id,
+                                                                           cart_item.subcategory_id, cart_item.quantity,
+                                                                           session)
+                item_ids = [item.id for item in purchased_items]
+                await BuyItemRepository.create_single(BuyItemDTO(buy_id=buy_dto.id, item_ids=item_ids), session)
+                await CartItemRepository.remove_from_cart(cart_item.id, session)
+            payment = await SePayService.create_pending_payment(
+                buy_dto.id,
+                payment_amount,
+                session,
+                payment_type=payment_type,
+                order_total_amount=order_total_amount,
+                remaining_amount=remaining_amount,
+            )
+            await session_commit(session)
+            qr_url = SePayService.create_vietqr_url(payment_amount, payment.payment_code)
+            kb_builder.button(text=get_text(language, BotEntity.USER, "cart"), callback_data=CartCallback.create(0))
+            if payment_type == SePayService.PAYMENT_TYPE_DEPOSIT:
+                return (
+                    f"🤝 <b>Đặt cọc 30%</b>\n\n"
+                    f"Mã đơn: <code>{payment.payment_code}</code>\n"
+                    f"Giá thanh toán full: {config.CURRENCY.get_localized_symbol()}{cart_total_price:,.0f}\n"
+                    f"Giá đặt cọc linh hoạt (+5%): {config.CURRENCY.get_localized_symbol()}{order_total_amount:,.0f}\n"
+                    f"Cọc cần thanh toán: {config.CURRENCY.get_localized_symbol()}{payment_amount:,.0f}\n"
+                    f"Còn lại: {config.CURRENCY.get_localized_symbol()}{remaining_amount:,.0f}\n\n"
+                    f"Nội dung chuyển khoản: <code>{payment.payment_code}</code>\n"
+                    f"⏳ Mã có hiệu lực {config.SEPAY_PAYMENT_TTL_MINUTES} phút.\n"
+                    f"🔗 QR chuyển khoản:\n{qr_url}"
+                ), kb_builder
+            return get_text(language, BotEntity.USER, "sepay_payment_created").format(
+                buy_id=buy_dto.id,
+                total_price=payment_amount,
+                currency_sym=config.CURRENCY.get_localized_symbol(),
+                payment_code=payment.payment_code,
+                ttl_minutes=config.SEPAY_PAYMENT_TTL_MINUTES,
+                qr_url=qr_url
+            ), kb_builder
         if callback_data.confirmation and len(out_of_stock) == 0 and is_enough_money:
             msg = get_text(language, BotEntity.USER, "purchase_completed")
             buy_dto = BuyDTO(buyer_id=user.id,
@@ -378,7 +452,7 @@ class CartService:
         elif callback_data.confirmation is False:
             kb_builder.row(callback_data.get_back_button(language, 0))
             return get_text(language, BotEntity.USER, "purchase_confirmation_declined"), kb_builder
-        elif is_enough_money is False:
+        elif is_enough_money is False and not config.SEPAY_ENABLED:
             kb_builder.row(callback_data.get_back_button(language, 0))
             return get_text(language, BotEntity.USER, "insufficient_funds"), kb_builder
         elif len(out_of_stock) > 0:

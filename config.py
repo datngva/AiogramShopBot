@@ -11,7 +11,7 @@ RUNTIME_ENVIRONMENT = RuntimeEnvironment(os.environ.get("RUNTIME_ENVIRONMENT"))
 if RUNTIME_ENVIRONMENT == RuntimeEnvironment.DEV:
     WEBHOOK_HOST = start_ngrok()
 else:
-    WEBHOOK_HOST = get_sslipio_external_url()
+    WEBHOOK_HOST = os.environ.get("WEBHOOK_HOST") or get_sslipio_external_url()
 WEBHOOK_PATH = os.environ.get("WEBHOOK_PATH", "/")
 WEBAPP_HOST = os.environ.get("WEBAPP_HOST", "0.0.0.0")
 WEBAPP_PORT = int(os.environ.get("WEBAPP_PORT", "5000"))
@@ -20,6 +20,15 @@ TOKEN = os.environ.get("TOKEN")
 ADMIN_ID_LIST = os.environ.get("ADMIN_ID_LIST").split(',')
 ADMIN_ID_LIST = [int(admin_id) for admin_id in ADMIN_ID_LIST]
 SUPPORT_LINK = os.environ.get("SUPPORT_LINK")
+# SEPAY / VIETQR
+SEPAY_ENABLED = os.environ.get("SEPAY_ENABLED", "false").lower() == "true"
+SEPAY_WEBHOOK_SECRET = os.environ.get("SEPAY_WEBHOOK_SECRET", "")
+SEPAY_BANK_CODE = os.environ.get("SEPAY_BANK_CODE", "")
+SEPAY_ACCOUNT_NUMBER = os.environ.get("SEPAY_ACCOUNT_NUMBER", "")
+SEPAY_ACCOUNT_NAME = os.environ.get("SEPAY_ACCOUNT_NAME", "")
+SEPAY_QR_TEMPLATE = os.environ.get("SEPAY_QR_TEMPLATE", "compact2")
+SEPAY_PAYMENT_PREFIX = os.environ.get("SEPAY_PAYMENT_PREFIX", "DH")
+SEPAY_PAYMENT_TTL_MINUTES = int(os.environ.get("SEPAY_PAYMENT_TTL_MINUTES", "30"))
 # POSTGRESQL
 DB_USER = os.environ.get("POSTGRES_USER", "postgres")
 DB_PASS = os.environ.get("POSTGRES_PASSWORD")
@@ -28,7 +37,7 @@ DB_HOST = os.environ.get("DB_HOST", "postgres")
 DB_NAME = os.environ.get("POSTGRES_DB", "aiogram-shop-bot")
 PAGE_ENTRIES = int(os.environ.get("PAGE_ENTRIES", "8"))
 MULTIBOT = os.environ.get("MULTIBOT", False) == 'true'
-CURRENCY = Currency(os.environ.get("CURRENCY", "USD"))
+CURRENCY = Currency(os.environ.get("CURRENCY", "VND"))
 KRYPTO_EXPRESS_API_KEY = os.environ.get("KRYPTO_EXPRESS_API_KEY")
 KRYPTO_EXPRESS_API_URL = os.environ.get("KRYPTO_EXPRESS_API_URL")
 KRYPTO_EXPRESS_API_SECRET = os.environ.get("KRYPTO_EXPRESS_API_SECRET")

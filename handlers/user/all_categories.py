@@ -24,6 +24,12 @@ async def all_categories_text_message(message: Message, session: AsyncSession, s
     await all_types(callback=message, session=session, state=state, language=language)
 
 
+@all_categories_router.message(F.text.in_(KB.get_localized_set(KB.PINNED_PRODUCTS)), IsUserExistFilter())
+async def pinned_products_text_message(message: Message, session: AsyncSession, language: Language):
+    media, kb_builder = await ItemService.get_pinned_products(session, language)
+    await NotificationService.answer_media(message, media, kb_builder.as_markup())
+
+
 async def all_types(**kwargs):
     message: CallbackQuery | Message = kwargs.get("callback")
     callback_data: AllCategoriesCallback = kwargs.get("callback_data")
@@ -35,6 +41,14 @@ async def all_types(**kwargs):
     else:
         callback: CallbackQuery = message
         await callback.message.edit_media(media=media, reply_markup=kb_builder.as_markup())
+
+
+async def pinned_products(**kwargs):
+    callback: CallbackQuery = kwargs.get("callback")
+    session: AsyncSession = kwargs.get("session")
+    language: Language = kwargs.get("language")
+    media, kb_builder = await ItemService.get_pinned_products(session, language)
+    await callback.message.edit_media(media=media, reply_markup=kb_builder.as_markup())
 
 
 async def all_categories(**kwargs):

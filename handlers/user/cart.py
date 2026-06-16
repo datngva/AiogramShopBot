@@ -1,7 +1,9 @@
+import re
+
 from aiogram import F, Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, InputMediaPhoto, URLInputFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from callbacks import CartCallback
@@ -62,7 +64,16 @@ async def buy_processing(**kwargs):
     language: Language = kwargs.get("language")
     await callback.message.edit_reply_markup()
     msg, kb_builder = await CartService.buy_processing(callback, callback_data, state, session, language)
-    await callback.message.edit_caption(caption=msg, reply_markup=kb_builder.as_markup())
+    qr_match = re.search(r"https://img\.vietqr\.io/[^\s<]+", msg)
+    if qr_match:
+        qr_url = qr_match.group(0)
+        caption = re.sub(r"\n?🔗 QR chuyển khoản:\nhttps://img\.vietqr\.io/[^\s<]+", "", msg)
+        await callback.message.edit_media(
+            media=InputMediaPhoto(media=URLInputFile(qr_url), caption=caption),
+            reply_markup=kb_builder.as_markup()
+        )
+    else:
+        await callback.message.edit_caption(caption=msg, reply_markup=kb_builder.as_markup())
 
 
 async def set_coupon(**kwargs):

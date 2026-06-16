@@ -36,6 +36,7 @@ class InventoryManagementStates(StatesGroup):
     price = State()
     private_data = State()
     filter_entity = State()
+    edit_value = State()
 
 
 class AnnouncementStates(StatesGroup):

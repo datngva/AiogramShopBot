@@ -97,7 +97,7 @@ class ShippingManagementService:
         elif current_state == ShippingManagementStates.shipping_price:
             try:
                 shipping_price = float(message.text)
-                assert 0 < shipping_price < 1000
+                assert 0 <= shipping_price < 10000000
                 await state.clear()
                 await state.update_data(shipping_price=shipping_price, shipping_name=state_data['shipping_name'])
                 kb_builder.button(text=get_text(language, BotEntity.COMMON, "confirm"),
@@ -243,7 +243,7 @@ class ShippingManagementService:
         if property_to_edit == ShippingOptionProperty.PRICE:
             try:
                 property_value = float(message.text)
-                assert 0 < property_value < 1000
+                assert 0 <= property_value < 10000000
                 await state.update_data(**state_data, value=property_value)
             except Exception as _:
                 kb_builder.button(

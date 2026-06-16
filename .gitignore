@@ -1,1 +1,11 @@
 /data/
+.env
+.env.*
+!.env.template
+__pycache__/
+**/__pycache__/
+*.py[cod]
+postgres_data/
+redis_data/
+caddy_data/
+caddy_config/

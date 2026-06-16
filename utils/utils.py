@@ -36,6 +36,8 @@ def start_ngrok():
     port = os.environ.get("WEBAPP_PORT")
     ngrok.set_auth_token(ngrok_token)
     http_tunnel = ngrok.connect(f":{port}", "http")
+    print(f"ngrok public URL: {http_tunnel.public_url}", flush=True)
+    print(f"SePay webhook URL: {http_tunnel.public_url}/webhooks/sepay?secret=<SEPAY_WEBHOOK_SECRET>", flush=True)
     return http_tunnel.public_url
 
 

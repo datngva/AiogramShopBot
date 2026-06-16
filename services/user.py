@@ -144,7 +144,7 @@ class UserService:
                             callback_data: MyProfileCallback,
                             session: AsyncSession) -> tuple[str, InlineKeyboardBuilder]:
         kb_builder = InlineKeyboardBuilder()
-        default_language = Language.EN
+        default_language = Language.VI
         back_button = callback_data.get_back_button(default_language, 0)
         if callback_data.language is None:
             msg = get_text(default_language, BotEntity.USER, "edit_language")

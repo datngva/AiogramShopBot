@@ -105,6 +105,7 @@ class CartCallback(BaseCallback, prefix="cart"):
     cart_item_id: int
     cart_action: CartAction | None
     shipping_option_id: int | None
+    payment_type: str | None = None
     confirmation: bool
 
     @staticmethod
@@ -113,6 +114,7 @@ class CartCallback(BaseCallback, prefix="cart"):
                cart_item_id: int = -1,
                cart_action: CartAction | None = None,
                shipping_option_id: int | None = None,
+               payment_type: str | None = None,
                confirmation=False,
                page: int = 0):
         return CartCallback(level=level,
@@ -120,6 +122,7 @@ class CartCallback(BaseCallback, prefix="cart"):
                             cart_item_id=cart_item_id,
                             cart_action=cart_action,
                             shipping_option_id=shipping_option_id,
+                            payment_type=payment_type,
                             confirmation=confirmation,
                             page=page)
 
@@ -143,6 +146,8 @@ class InventoryManagementCallback(BaseCallback, SortingCallback, prefix="invento
     add_type: AddType | None
     entity_type: EntityType | None
     entity_id: int | None
+    item_type: ItemType | None = None
+    edit_action: str | None = None
     confirmation: bool
 
     @staticmethod
@@ -150,6 +155,8 @@ class InventoryManagementCallback(BaseCallback, SortingCallback, prefix="invento
                add_type: AddType | None = None,
                entity_type: EntityType | None = None,
                entity_id: int | None = None,
+               item_type: ItemType | None = None,
+               edit_action: str | None = None,
                sort_order: SortOrder = SortOrder.DISABLE,
                sort_property: SortProperty = SortProperty.NAME,
                is_filter_enabled: bool = False,
@@ -159,6 +166,8 @@ class InventoryManagementCallback(BaseCallback, SortingCallback, prefix="invento
                                            add_type=add_type,
                                            entity_type=entity_type,
                                            entity_id=entity_id,
+                                           item_type=item_type,
+                                           edit_action=edit_action,
                                            sort_order=sort_order,
                                            sort_property=sort_property,
                                            is_filter_enabled=is_filter_enabled,
@@ -215,10 +224,12 @@ class MediaManagementCallback(BaseCallback, SortingCallback, prefix="media"):
     entity_type: EntityType | None
     entity_id: int | None = None
     keyboard_button: KeyboardButton | None = None
+    media_target: str | None = None
 
     @staticmethod
     def create(level: int, entity_type: EntityType | None = None,
                keyboard_button: KeyboardButton | None = None,
+               media_target: str | None = None,
                sort_order: SortOrder = SortOrder.DISABLE,
                sort_property: SortProperty = SortProperty.NAME,
                is_filter_enabled: bool = False,
@@ -230,6 +241,7 @@ class MediaManagementCallback(BaseCallback, SortingCallback, prefix="media"):
                                        sort_property=sort_property,
                                        is_filter_enabled=is_filter_enabled,
                                        keyboard_button=keyboard_button,
+                                       media_target=media_target,
                                        page=page)
 
 

@@ -10,7 +10,7 @@ from sqladmin import Admin
 
 import config
 from aiogram import Dispatcher
-from fastapi import FastAPI, Request, status, HTTPException
+from fastapi import FastAPI, Request, status, HTTPException, Header
 
 from admin import authentication_backend
 from db import create_db_and_tables, engine
@@ -31,7 +31,9 @@ from models.review import ReviewAdmin
 from models.shipping_option import ShippingOptionAdmin
 from models.subcategory import SubcategoryAdmin
 from models.user import UserAdmin
+from models.bank_payment import BankPaymentAdmin
 from processing.processing import processing_router
+from services.sepay import SePayService
 from repositories.button_media import ButtonMediaRepository
 from services.media import MediaService
 from services.notification import NotificationService
@@ -126,6 +128,7 @@ admin.add_model_view(CartAdmin)
 admin.add_model_view(CartItemAdmin)
 admin.add_model_view(ReferralBonusAdmin)
 admin.add_model_view(ReviewAdmin)
+admin.add_model_view(BankPaymentAdmin)
 
 app.include_router(processing_router)
 
@@ -143,6 +146,17 @@ async def webhook(request: Request):
     except Exception as e:
         logging.error(f"Error processing webhook: {e}")
         return {"status": "error"}, status.HTTP_500_INTERNAL_SERVER_ERROR
+
+
+@app.post("/webhooks/sepay")
+async def sepay_webhook(request: Request, x_sepay_webhook_secret: str | None = Header(default=None)):
+    query_secret = request.query_params.get("secret")
+    if config.SEPAY_WEBHOOK_SECRET and x_sepay_webhook_secret != config.SEPAY_WEBHOOK_SECRET and query_secret != config.SEPAY_WEBHOOK_SECRET:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+    payload = await request.json()
+    from db import get_db_session
+    async with get_db_session() as session:
+        return await SePayService.handle_webhook(payload, session)
 
 
 @app.exception_handler(Exception)

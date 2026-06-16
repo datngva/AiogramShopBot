@@ -8,6 +8,7 @@ from utils.utils import get_text
 
 class KeyboardButton(Enum):
     ALL_CATEGORIES = "ALL_CATEGORIES"
+    PINNED_PRODUCTS = "PINNED_PRODUCTS"
     MY_PROFILE = "MY_PROFILE"
     FAQ = "FAQ"
     HELP = "HELP"

@@ -37,6 +37,7 @@ main_router = Router()
 @main_router.message(Command("help"))
 async def start(message: Message, command: CommandObject, session: AsyncSession, language: Language):
     all_categories_button = types.KeyboardButton(text=get_text(language, BotEntity.USER, "all_categories"))
+    pinned_products_button = types.KeyboardButton(text=get_text(language, BotEntity.USER, "pinned_products"))
     my_profile_button = types.KeyboardButton(text=get_text(language, BotEntity.USER, "my_profile"))
     faq_button = types.KeyboardButton(text=get_text(language, BotEntity.USER, "faq"))
     help_button = types.KeyboardButton(text=get_text(language, BotEntity.USER, "help"))
@@ -49,9 +50,8 @@ async def start(message: Message, command: CommandObject, session: AsyncSession,
         telegram_id=telegram_id,
         language=language
     ), command.args, session)
-    keyboard = [[all_categories_button, my_profile_button], [faq_button, help_button],
-                [reviews_button],
-                [cart_button]]
+    keyboard = [[pinned_products_button, all_categories_button], [my_profile_button, cart_button], [faq_button, help_button],
+                [reviews_button]]
     if telegram_id in config.ADMIN_ID_LIST:
         keyboard.append([admin_menu_button])
     start_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2, keyboard=keyboard)
@@ -63,20 +63,17 @@ async def start(message: Message, command: CommandObject, session: AsyncSession,
 
 @main_router.message(F.text.in_(KeyboardButton.get_localized_set(KeyboardButton.FAQ)), IsUserExistFilter())
 async def faq(message: Message, session: AsyncSession, language: Language):
-    button_media = await ButtonMediaRepository.get_by_button(KeyboardButton.FAQ, session)
-    media = MediaService.convert_to_media(button_media.media_id,
-                                          caption=get_text(language, BotEntity.USER, "faq_string"))
-    await NotificationService.answer_media(message, media)
+    await message.answer(get_text(language, BotEntity.USER, "faq_string"))
 
 
 @main_router.message(F.text.in_(KeyboardButton.get_localized_set(KeyboardButton.HELP)), IsUserExistFilter())
 async def support(message: Message, session: AsyncSession, language: Language):
-    kb_builder = InlineKeyboardBuilder()
-    kb_builder.button(text=get_text(language, BotEntity.USER, "help_button"), url=SUPPORT_LINK)
-    button_media = await ButtonMediaRepository.get_by_button(KeyboardButton.HELP, session)
-    media = MediaService.convert_to_media(button_media.media_id,
-                                          caption=get_text(language, BotEntity.USER, "help_string"))
-    await NotificationService.answer_media(message, media, kb_builder.as_markup())
+    reply_markup = None
+    if SUPPORT_LINK:
+        kb_builder = InlineKeyboardBuilder()
+        kb_builder.button(text=get_text(language, BotEntity.USER, "help_button"), url=SUPPORT_LINK)
+        reply_markup = kb_builder.as_markup()
+    await message.answer(get_text(language, BotEntity.USER, "help_string"), reply_markup=reply_markup)
 
 
 @main_router.message(F.text.in_(KeyboardButton.get_localized_set(KeyboardButton.REVIEWS)), IsUserExistFilter())

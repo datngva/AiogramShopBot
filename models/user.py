@@ -1,8 +1,7 @@
-from datetime import datetime
+﻿from datetime import datetime
 from pydantic import BaseModel
 from sqladmin import ModelView
-from sqlalchemy import Column, Integer, DateTime, String, Boolean, Float, func, CheckConstraint, Enum, ForeignKey, \
-    BigInteger
+from sqlalchemy import Column, Integer, DateTime, String, Boolean, Float, func, CheckConstraint, Enum, ForeignKey, BigInteger
 from sqlalchemy.orm import relationship
 
 from enums.bot_entity import BotEntity
@@ -59,6 +58,10 @@ class User(Base):
         uselist=False,
         cascade="all, delete-orphan"
     )
+    coupon_usages = relationship(
+        "CouponUsage",
+        cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         CheckConstraint('top_up_amount >= 0', name='check_top_up_amount_positive'),
@@ -97,7 +100,8 @@ class UserAdmin(ModelView, model=User):
                            User.received_referral_bonuses,
                            User.referred_by_user_id,
                            User.payments,
-                           User.cart]
+                           User.cart,
+                           User.coupon_usages]
     can_delete = False
     can_edit = True
     can_create = False

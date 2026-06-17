@@ -5,8 +5,10 @@ from aiogram.types import ErrorEvent, Message, BufferedInputFile, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy.ext.asyncio import AsyncSession
 import config
-from config import SUPPORT_LINK
+from config import SUPPORT_LINK, SUPPORT_HOURS
 import logging
+
+SUPPORT_TELEGRAM_USERNAME = "@datnvd"
 from bot import dp, main, redis
 from enums.bot_entity import BotEntity
 from enums.keyboard_button import KeyboardButton
@@ -69,11 +71,16 @@ async def faq(message: Message, session: AsyncSession, language: Language):
 @main_router.message(F.text.in_(KeyboardButton.get_localized_set(KeyboardButton.HELP)), IsUserExistFilter())
 async def support(message: Message, session: AsyncSession, language: Language):
     reply_markup = None
-    if SUPPORT_LINK:
+    support_link = SUPPORT_LINK or f"https://t.me/{SUPPORT_TELEGRAM_USERNAME.lstrip('@')}"
+    if support_link:
         kb_builder = InlineKeyboardBuilder()
-        kb_builder.button(text=get_text(language, BotEntity.USER, "help_button"), url=SUPPORT_LINK)
+        kb_builder.button(text=get_text(language, BotEntity.USER, "help_button"), url=support_link)
         reply_markup = kb_builder.as_markup()
-    await message.answer(get_text(language, BotEntity.USER, "help_string"), reply_markup=reply_markup)
+    support_message = get_text(language, BotEntity.USER, "help_string").format(
+        support_hours=SUPPORT_HOURS,
+        admin_username=SUPPORT_TELEGRAM_USERNAME
+    )
+    await message.answer(support_message, reply_markup=reply_markup)
 
 
 @main_router.message(F.text.in_(KeyboardButton.get_localized_set(KeyboardButton.REVIEWS)), IsUserExistFilter())

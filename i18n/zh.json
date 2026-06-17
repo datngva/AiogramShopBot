@@ -90,10 +90,13 @@
     "pick_usage_number": "🔢 请选择使用次数：",
     "request_coupon_value": "💵 请输入优惠券的值：\n对于百分比券，输入百分比。\n对于固定金额券，输入以 {currency_text} 计价的金额。\n类型：{coupon_type}\n使用次数：{number_of_uses}",
     "request_coupon_name": "✏️ 请输入优惠券名称：",
-    "create_coupon_confirmation": "✅ 确定要创建优惠券吗？\n优惠券名称：{coupon_name}\n优惠券类型：{coupon_type}\n可使用次数：{number_of_uses}\n折扣金额：{coupon_value}{symbol}",
-    "coupon_created_successfully": "🎉 优惠券创建成功。\n优惠券名称：{coupon_name}\n优惠券类型：{coupon_type}\n可使用次数：{number_of_uses}\n有效期至：{use_before}\n面值：{coupon_value}{symbol}\n代码：<code>{code}</code>",
-    "coupon_info": "✏️ 优惠券名称：{coupon_name}\n🎟️ 优惠券类型：{coupon_type}\n🟡 是否有效：{is_active}\n🔄 可使用次数：{number_of_uses}\n📅 有效期至：{use_before}\n💰 面值：{coupon_value}{symbol}\n🔢 代码：<code>{code}</code>\n👥 已使用次数：{usage_count}",
+    "create_coupon_confirmation": "❓ Are you sure you want to create a coupon?\nCoupon name: {coupon_name}\nCoupon Type: {coupon_type}\nTotal usage limit: {number_of_uses}\nDiscount amount: {coupon_value}{symbol}\nMinimum order: {currency_sym}{min_order_amount:,.0f}\nMax discount: {max_discount_text}\nPer-user limit: {per_user_limit_text}\nPayment scope: {payment_scope}",
+    "coupon_created_successfully": "✅ Coupon successfully created.\nCoupon name: {coupon_name}\nCoupon type: {coupon_type}\nTotal usage limit: {number_of_uses}\nValue: {coupon_value}{symbol}\nMinimum order: {currency_sym}{min_order_amount:,.0f}\nMax discount: {max_discount_text}\nPer-user limit: {per_user_limit_text}\nPayment scope: {payment_scope}\nUse before: {use_before}\nCode: <code>{code}</code>",
+    "coupon_info": "🎟️ Coupon name: {coupon_name}\n🎟️ Coupon type: {coupon_type}\n🟡 Is active: {is_active}\n🔢 Total usage limit: {number_of_uses}\n👥 Usage count: {usage_count}\n💵 Minimum order: {currency_sym}{min_order_amount:,.0f}\n💸 Max discount: {max_discount_text}\n👤 Per-user limit: {per_user_limit_text}\n💳 Payment scope: {payment_scope}\n🕒 Starts at: {start_datetime}\n📅 Use before: {use_before}\n💰 Value: {coupon_value}{symbol}\n🔐 Code: <code>{code}</code>",
     "coupon": "🎟️ 优惠券 {name}",
+    "delete_coupon": "🗑️ 删除优惠券",
+    "delete_coupon_confirmation": "❓ <b>您确定要删除优惠券 <u>{coupon_name}</u> 吗？</b>",
+    "coupon_delete_entity": "优惠券",
     "enable": "✅ 启用",
     "disable": "❌ 禁用",
     "users_ylabel": "新增用户",
@@ -143,7 +146,15 @@
     "deposits_statistics_line": "💰 {crypto_name} 存款总额: {crypto_amount:.8f} {crypto_name}",
     "sending_result": "✅ <b>消息已发送给 {len} 位活跃用户中的 {counter} 位\n👤 总用户数: {users_count}\n状态: {status}</b>",
     "in_progress": "🟡 进行中...",
-    "finished": "🟢 已完成。"
+    "finished": "🟢 已完成。",
+    "request_coupon_min_order": "💵 Please send the minimum order amount for this coupon:\nSend <code>0</code> for no minimum.",
+    "request_coupon_max_discount": "💵 Please send the maximum discount cap for percentage coupons:\nSend <code>0</code> for no cap.",
+    "request_coupon_usage_limit": "🔢 Please send the total usage limit:\nSend <code>0</code> for unlimited.",
+    "request_coupon_per_user_limit": "🔢 Please send the per-user usage limit:\nSend <code>0</code> for unlimited.",
+    "pick_coupon_payment_scope": "💳 <b>Pick the payment scope for this coupon:</b>",
+    "coupon_payment_scope_all": "💳 All payment types",
+    "coupon_payment_scope_full_only": "💰 Full payment only",
+    "coupon_payment_scope_exclude_deposit": "📦 Exclude deposit orders"
   },
   "common": {
     "back_button": "⬅️ 返回",
@@ -314,7 +325,7 @@
     "faq_string": "⚠️ <b>忽略规则并不能豁免责任。完成购买即表示您同意所有规则。</b>\n\n<b>商店规则：</b>\n\n❗1. 若有不当或冒犯行为，卖家有权拒绝服务。\n❗2. 仅在商品无效时可提供更换。\n❗3. 仅接受视频证据用于更换。\n❗4. 保修时间为 30 分钟。\n❗5. 管理方对商品被用于任何非法用途不承担责任。\n❗6. 规则可能随时修改。\n❗7. 余额无法提现。",
     "help": "🆘 帮助",
     "help_button": "✉️ 联系客服",
-    "help_string": "🤝 客服支持",
+    "help_string": "💬 <b>联系客服</b>\n\n🕘 支持时间：{support_hours}\n👤 管理员 Telegram：{admin_username}\n\n点击下方按钮即可直接联系支持。",
     "insufficient_funds": "⚠️ 余额不足！",
     "my_profile": "👤 我的资料",
     "my_profile_msg": "👤 <b>您的资料\nID：</b> <code>{telegram_id}</code>\n\n<b>您的 {currency_text} 余额：</b>\n{fiat_balance}{currency_sym}",
@@ -391,6 +402,11 @@
     "top_up_balance_payment_msg": "💵 <b>请准确发送 <code>{crypto_amount}</code> {crypto_name}</b>\n\n⚠️ <b>不要少发。</b>\n⚠️ <b>不要多发。</b>\n⚠️ <b>仅接受准确金额。</b>\n\n❌ 不允许少付。\n❌ 不允许多付。\n❗ 如果您发送的金额不是 <code>{crypto_amount}</code> {crypto_name}，您的资金将会<b>永久丢失</b>，并且<b>无法找回</b>。\n\n支付状态: {status}\n⏳ 有效期至: {payment_lifetime}\n\n<b>充值地址：</b>\n<code>{addr}</code>\n\nℹ️ 这是仅为本次支付创建的唯一 {crypto_name} 地址。\n✅ 交易到账后 5 分钟内会为您充值余额。",
     "top_up_balance_request_fiat": "💵 <b>请输入您希望充值的 <u>{currency_text}</u> 金额\n⚠️ 注意！最低存款金额为 5 {currency_text}</b>",
     "top_up_balance_invalid_fiat_amount": "⚠️ <b>金额无效。</b>\n请输入一个正数金额，范围从 <code>5</code> 到小于 <code>1000000</code> {currency_text}，最多保留 2 位小数。",
-    "pinned_products": "📌 Sản phẩm nổi bật"
+    "pinned_products": "📌 Sản phẩm nổi bật",
+    "coupon_min_order_not_reached": "❌ This coupon requires a minimum order of {currency_sym}{min_order_amount:,.0f}",
+    "coupon_usage_limit_reached": "❌ This coupon has reached its total usage limit",
+    "coupon_user_limit_reached": "❌ You have reached the usage limit for this coupon",
+    "coupon_payment_scope_not_allowed": "❌ This coupon is not valid for the selected payment method",
+    "coupon_summary": "🎟️ Applied coupon: <code>{coupon_code}</code>\n💸 Discount: <code>{currency_sym}{discount_amount:,.0f}</code>"
   }
 }

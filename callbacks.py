@@ -19,6 +19,7 @@ from enums.statistics_entity import StatisticsEntity
 from enums.statistics_timedelta import StatisticsTimeDelta
 from enums.user_management_operation import UserManagementOperation
 from enums.coupon_number_of_uses import CouponNumberOfUses
+from enums.coupon_payment_scope import CouponPaymentScope
 from enums.user_role import UserRole
 from utils.utils import get_text
 
@@ -249,15 +250,19 @@ class CouponManagementCallback(BaseCallback, prefix="coupons"):
     coupon_id: int | None = None
     coupon_type: CouponType | None = None
     number_of_uses: CouponNumberOfUses | None = None
+    payment_scope: CouponPaymentScope | None = None
     confirmation: bool
 
     @staticmethod
     def create(level: int, coupon_id: int | None = None, coupon_type: CouponType | None = None,
-               number_of_uses: CouponNumberOfUses | None = None, confirmation: bool = False, page: int = 0):
+               number_of_uses: CouponNumberOfUses | None = None,
+               payment_scope: CouponPaymentScope | None = None,
+               confirmation: bool = False, page: int = 0):
         return CouponManagementCallback(level=level,
                                         coupon_id=coupon_id,
                                         coupon_type=coupon_type,
                                         number_of_uses=number_of_uses,
+                                        payment_scope=payment_scope,
                                         confirmation=confirmation,
                                         page=page)
 

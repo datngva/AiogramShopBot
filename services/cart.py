@@ -19,6 +19,7 @@ from handlers.common.common import add_pagination_buttons
 from handlers.user.constants import UserStates
 from models.buy import BuyDTO
 from models.buyItem import BuyItemDTO
+from models.coupon import CouponUsageDTO
 from models.cartItem import CartItemDTO
 from repositories.button_media import ButtonMediaRepository
 from repositories.buy import BuyRepository
@@ -26,11 +27,12 @@ from repositories.buyItem import BuyItemRepository
 from repositories.cart import CartRepository
 from repositories.cartItem import CartItemRepository
 from repositories.category import CategoryRepository
-from repositories.coupon import CouponRepository
+from repositories.coupon import CouponRepository, CouponUsageRepository
 from repositories.item import ItemRepository
 from repositories.shipping_option import ShippingOptionRepository
 from repositories.subcategory import SubcategoryRepository
 from repositories.user import UserRepository
+from services.coupon_validation import CouponValidationService, CouponValidationErrorCode
 from services.media import MediaService
 from services.notification import NotificationService
 from services.sepay import SePayService
@@ -39,6 +41,34 @@ from utils.utils import get_bot_photo_id
 
 
 class CartService:
+    @staticmethod
+    async def _get_coupon_validation_message(error_code: CouponValidationErrorCode,
+                                             coupon_dto,
+                                             language: Language) -> str:
+        if error_code == CouponValidationErrorCode.MIN_ORDER_NOT_REACHED:
+            return get_text(language, BotEntity.USER, "coupon_min_order_not_reached").format(
+                currency_sym=config.CURRENCY.get_localized_symbol(),
+                min_order_amount=float(coupon_dto.min_order_amount or 0)
+            )
+        if error_code == CouponValidationErrorCode.USAGE_LIMIT_REACHED:
+            return get_text(language, BotEntity.USER, "coupon_usage_limit_reached")
+        if error_code == CouponValidationErrorCode.USER_LIMIT_REACHED:
+            return get_text(language, BotEntity.USER, "coupon_user_limit_reached")
+        if error_code == CouponValidationErrorCode.PAYMENT_SCOPE_NOT_ALLOWED:
+            return get_text(language, BotEntity.USER, "coupon_payment_scope_not_allowed")
+        return get_text(language, BotEntity.USER, "coupon_not_found")
+
+    @staticmethod
+    async def _calculate_cart_totals(cart_items: list[CartItemDTO],
+                                     availability_map,
+                                     shipping_option) -> float:
+        cart_total_price = shipping_option.price if shipping_option else 0.0
+        for cart_item in cart_items:
+            availability = availability_map.get((cart_item.item_type, cart_item.category_id, cart_item.subcategory_id))
+            if availability is not None:
+                cart_total_price += availability.price * cart_item.quantity
+        return cart_total_price
+
     @staticmethod
     async def _get_cart_availability_map(cart_items: list[CartItemDTO],
                                          session: AsyncSession | Session):
@@ -241,19 +271,38 @@ class CartService:
         shipping_address = state_data.get("shipping_address")
         has_physical = cart_items_dict.get(ItemType.PHYSICAL) is not None
         sym = config.CURRENCY.get_localized_symbol()
+        cart_total_price_before_discount = cart_total_price
+        discount_amount = 0.0
         if coupon_id is not None:
-            cart_total_price_before_discount = cart_total_price
             coupon_dto = await CouponRepository.get_by_id(coupon_id, session)
-            if coupon_dto.type == CouponType.PERCENTAGE:
-                cart_total_price = ((100 - coupon_dto.value) / 100) * cart_total_price
+            validation_result = await CouponValidationService.validate_coupon(
+                coupon_dto,
+                cart_total_price_before_discount,
+                user.id,
+                session,
+                callback_data.payment_type,
+            )
+            if validation_result.is_valid:
+                cart_total_price = validation_result.final_total
+                discount_amount = validation_result.discount_amount
+                cart_content.append(get_text(language, BotEntity.USER, "coupon_summary").format(
+                    coupon_code=coupon_dto.code,
+                    currency_sym=sym,
+                    discount_amount=discount_amount,
+                ))
             else:
-                cart_total_price = cart_total_price - coupon_dto.value
-                cart_total_price = max(cart_total_price, 1)
-            discount_amount = cart_total_price_before_discount - cart_total_price
-            cart_content.append(f"\n{get_text(language, BotEntity.USER, "cart_total_price").format(
-                cart_total_price=cart_total_price_before_discount,
-                currency_sym=sym
-            )}")
+                await state.update_data(coupon_id=None)
+                coupon_id = None
+                cart_content.append(await CartService._get_coupon_validation_message(
+                    validation_result.error_code,
+                    coupon_dto,
+                    language,
+                ))
+        cart_content.append(f"\n{get_text(language, BotEntity.USER, "cart_total_price").format(
+            cart_total_price=cart_total_price_before_discount,
+            currency_sym=sym
+        )}")
+        if discount_amount > 0:
             cart_content.append(get_text(language, BotEntity.USER, "cart_total_discount").format(
                 cart_total_discount=discount_amount,
                 currency_sym=sym,
@@ -262,11 +311,6 @@ class CartService:
                 cart_total_final=cart_total_price,
                 currency_sym=sym
             ))
-        else:
-            cart_content.append(f"\n{get_text(language, BotEntity.USER, "cart_total_price").format(
-                cart_total_price=cart_total_price,
-                currency_sym=sym
-            )}")
         if shipping_option:
             cart_content.append(f"\n{get_text(language, BotEntity.USER, "shipping_details").format(
                 shipping_option_name=shipping_option.name,
@@ -344,19 +388,25 @@ class CartService:
         total_discount_amount = 0
         state_data = await state.get_data()
         coupon_id = state_data.get('coupon_id')
+        coupon_dto = None
         if coupon_id is not None:
             cart_total_price_before_discount = cart_total_price
             coupon_dto = await CouponRepository.get_by_id(coupon_id, session)
-            if coupon_dto.usage_limit == 1:
-                coupon_dto.is_active = False
-                coupon_dto.usage_count += 1
-                await CouponRepository.update(coupon_dto, session)
-            if coupon_dto.type == CouponType.PERCENTAGE:
-                cart_total_price = ((100 - coupon_dto.value) / 100) * cart_total_price
-            else:
-                cart_total_price = cart_total_price - coupon_dto.value
-                cart_total_price = max(cart_total_price, 1)
-            total_discount_amount = cart_total_price_before_discount - cart_total_price
+            validation_result = await CouponValidationService.validate_coupon(
+                coupon_dto,
+                cart_total_price_before_discount,
+                user.id,
+                session,
+                callback_data.payment_type,
+            )
+            if validation_result.is_valid is False:
+                kb_builder = InlineKeyboardBuilder()
+                kb_builder.row(callback_data.get_back_button(language, 0))
+                return await CartService._get_coupon_validation_message(validation_result.error_code,
+                                                                        coupon_dto,
+                                                                        language), kb_builder
+            cart_total_price = validation_result.final_total
+            total_discount_amount = validation_result.discount_amount
         is_enough_money = (user.top_up_amount - user.consume_records) >= cart_total_price
         kb_builder = InlineKeyboardBuilder()
         if callback_data.confirmation and len(out_of_stock) == 0 and config.SEPAY_ENABLED:
@@ -390,6 +440,12 @@ class CartService:
                 order_total_amount=order_total_amount,
                 remaining_amount=remaining_amount,
             )
+            if coupon_dto is not None:
+                coupon_dto.usage_count += 1
+                if coupon_dto.usage_limit > 0 and coupon_dto.usage_count >= coupon_dto.usage_limit:
+                    coupon_dto.is_active = False
+                await CouponRepository.update(coupon_dto, session)
+                await CouponUsageRepository.create(CouponUsageDTO(coupon_id=coupon_dto.id, user_id=user.id, buy_id=buy_dto.id), session)
             await session_commit(session)
             qr_url = SePayService.create_vietqr_url(payment_amount, payment.payment_code)
             kb_builder.button(text=get_text(language, BotEntity.USER, "cart"), callback_data=CartCallback.create(0))
@@ -446,6 +502,12 @@ class CartService:
             )
             user.consume_records = user.consume_records + cart_total_price
             await UserRepository.update(user, session)
+            if coupon_dto is not None:
+                coupon_dto.usage_count += 1
+                if coupon_dto.usage_limit > 0 and coupon_dto.usage_count >= coupon_dto.usage_limit:
+                    coupon_dto.is_active = False
+                await CouponRepository.update(coupon_dto, session)
+                await CouponUsageRepository.create(CouponUsageDTO(coupon_id=coupon_dto.id, user_id=user.id, buy_id=buy_dto.id), session)
             await session_commit(session)
             await NotificationService.new_buy(buy_dto, user, session)
             return msg, kb_builder
@@ -551,8 +613,22 @@ class CartService:
                 callback_data=CartCallback.create(level=2,
                                                   shipping_option_id=state_data.get("shipping_option_id"))
             )
-            if coupon_dto is None:
-                caption = get_text(language, BotEntity.USER, "coupon_not_found")
+            user = await UserRepository.get_by_tgid(message.from_user.id, session)
+            shipping_option = None
+            shipping_option_id = state_data.get("shipping_option_id")
+            if shipping_option_id:
+                shipping_option = await ShippingOptionRepository.get_by_id(shipping_option_id, session)
+            cart_items = await CartItemRepository.get_all_by_user_id(user.id, session)
+            availability_map = await CartService._get_cart_availability_map(cart_items, session)
+            cart_total_price = await CartService._calculate_cart_totals(cart_items, availability_map, shipping_option)
+            validation_result = await CouponValidationService.validate_coupon(coupon_dto,
+                                                                             cart_total_price,
+                                                                             user.id,
+                                                                             session)
+            if validation_result.is_valid is False:
+                caption = await CartService._get_coupon_validation_message(validation_result.error_code,
+                                                                           coupon_dto,
+                                                                           language)
             else:
                 await state.update_data(coupon_id=coupon_dto.id)
                 caption = get_text(language, BotEntity.USER, "coupon_applied")

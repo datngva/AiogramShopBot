@@ -90,10 +90,13 @@
     "pick_usage_number": "🔢 Anzahl der Verwendungen wählen:",
     "request_coupon_value": "💵 Sende den Wert des Coupons:\nBei „Prozent-Coupon“ sende den Rabatt in Prozent.\nBei „Fester Betrag“ sende den Rabattwert in {currency_text}.\nTyp: {coupon_type}\nVerwendungen: {number_of_uses}",
     "request_coupon_name": "✏️ Bitte senden Sie den Gutschein-Namen:",
-    "create_coupon_confirmation": "✅ Sind Sie sicher, dass Sie einen Gutschein erstellen möchten?\nGutschein-Name: {coupon_name}\nGutschein-Typ: {coupon_type}\nAnzahl der Nutzungen: {number_of_uses}\nRabattbetrag: {coupon_value}{symbol}",
-    "coupon_created_successfully": "🎉 Gutschein erfolgreich erstellt.\nGutschein-Name: {coupon_name}\nGutschein-Typ: {coupon_type}\nAnzahl der Nutzungen: {number_of_uses}\nVerwenden vor: {use_before}\nWert: {coupon_value}{symbol}\nCode: <code>{code}</code>",
-    "coupon_info": "✏️ Gutschein-Name: {coupon_name}\n🎟️ Gutschein-Typ: {coupon_type}\n🟡 Aktiv: {is_active}\n🔄 Anzahl der Nutzungen: {number_of_uses}\n📅 Verwenden vor: {use_before}\n💰 Wert: {coupon_value}{symbol}\n🔢 Code: <code>{code}</code>\n👥 Nutzungsanzahl: {usage_count}",
+    "create_coupon_confirmation": "❓ Are you sure you want to create a coupon?\nCoupon name: {coupon_name}\nCoupon Type: {coupon_type}\nTotal usage limit: {number_of_uses}\nDiscount amount: {coupon_value}{symbol}\nMinimum order: {currency_sym}{min_order_amount:,.0f}\nMax discount: {max_discount_text}\nPer-user limit: {per_user_limit_text}\nPayment scope: {payment_scope}",
+    "coupon_created_successfully": "✅ Coupon successfully created.\nCoupon name: {coupon_name}\nCoupon type: {coupon_type}\nTotal usage limit: {number_of_uses}\nValue: {coupon_value}{symbol}\nMinimum order: {currency_sym}{min_order_amount:,.0f}\nMax discount: {max_discount_text}\nPer-user limit: {per_user_limit_text}\nPayment scope: {payment_scope}\nUse before: {use_before}\nCode: <code>{code}</code>",
+    "coupon_info": "🎟️ Coupon name: {coupon_name}\n🎟️ Coupon type: {coupon_type}\n🟡 Is active: {is_active}\n🔢 Total usage limit: {number_of_uses}\n👥 Usage count: {usage_count}\n💵 Minimum order: {currency_sym}{min_order_amount:,.0f}\n💸 Max discount: {max_discount_text}\n👤 Per-user limit: {per_user_limit_text}\n💳 Payment scope: {payment_scope}\n🕒 Starts at: {start_datetime}\n📅 Use before: {use_before}\n💰 Value: {coupon_value}{symbol}\n🔐 Code: <code>{code}</code>",
     "coupon": "🎟️ Gutschein {name}",
+    "delete_coupon": "🗑️ Gutschein löschen",
+    "delete_coupon_confirmation": "❓ <b>Möchten Sie den Gutschein <u>{coupon_name}</u> wirklich löschen?</b>",
+    "coupon_delete_entity": "Gutschein",
     "enable": "✅ Aktivieren",
     "disable": "❌ Deaktivieren",
     "users_ylabel": "Neue Benutzer",
@@ -143,7 +146,15 @@
     "deposits_statistics_line": "💰 Gesamte {crypto_name}-Einzahlungen im Wert: {crypto_amount:.8f} {crypto_name}",
     "sending_result": "✅ <b>Nachricht an {counter} von {len} aktiven Benutzern gesendet.\n👤 Benutzer insgesamt: {users_count}\nStatus: {status}</b>",
     "in_progress": "🟡 In Bearbeitung...",
-    "finished": "🟢 Abgeschlossen."
+    "finished": "🟢 Abgeschlossen.",
+    "request_coupon_min_order": "💵 Please send the minimum order amount for this coupon:\nSend <code>0</code> for no minimum.",
+    "request_coupon_max_discount": "💵 Please send the maximum discount cap for percentage coupons:\nSend <code>0</code> for no cap.",
+    "request_coupon_usage_limit": "🔢 Please send the total usage limit:\nSend <code>0</code> for unlimited.",
+    "request_coupon_per_user_limit": "🔢 Please send the per-user usage limit:\nSend <code>0</code> for unlimited.",
+    "pick_coupon_payment_scope": "💳 <b>Pick the payment scope for this coupon:</b>",
+    "coupon_payment_scope_all": "💳 All payment types",
+    "coupon_payment_scope_full_only": "💰 Full payment only",
+    "coupon_payment_scope_exclude_deposit": "📦 Exclude deposit orders"
   },
   "common": {
     "back_button": "⬅️ Zurück",
@@ -314,7 +325,7 @@
     "faq_string": "⚠️ <b>Unwissenheit über die Regeln befreit nicht von Verantwortung. Mit dem Kauf eines Artikels stimmst du automatisch allen Regeln zu.</b>\n\n<b>Ladenregeln:</b>\n\n❗1. Bei unangemessenem/beleidigendem Verhalten kann der Verkäufer den Service verweigern.\n❗2. Ersatz wird nur bei ungültigem Artikel gewährt.\n❗3. Für den Ersatz ist ein Videobeweis erforderlich.\n❗4. Garantie – 30 Minuten.\n❗5. Die Administration haftet nicht für illegale Handlungen, die der Käufer mit den gekauften Artikeln begeht.\n❗6. Regeln können jederzeit geändert werden.\n❗7. Eine Auszahlung des Guthabens ist nicht möglich.",
     "help": "🆘 Hilfe",
     "help_button": "✉️ Support kontaktieren",
-    "help_string": "🤝 Support",
+    "help_string": "💬 <b>Support</b>\n\n🕘 Supportzeiten: {support_hours}\n👤 Admin-Telegram: {admin_username}\n\nTippe auf die Schaltfläche unten, um den Support direkt zu kontaktieren.",
     "insufficient_funds": "⚠️ Nicht genügend Guthaben!",
     "my_profile": "👤 Mein Profil",
     "my_profile_msg": "👤 <b>Dein Profil\nID:</b> <code>{telegram_id}</code>\n\n<b>Dein Guthaben in {currency_text}:</b>\n{fiat_balance}{currency_sym}",
@@ -391,6 +402,11 @@
     "top_up_balance_payment_msg": "💵 <b>Senden Sie genau <code>{crypto_amount}</code> {crypto_name}</b>\n\n⚠️ <b>SENDEN SIE NICHT WENIGER.</b>\n⚠️ <b>SENDEN SIE NICHT MEHR.</b>\n⚠️ <b>NUR DER EXAKTE BETRAG WIRD AKZEPTIERT.</b>\n\n❌ Unterzahlung ist verboten.\n❌ Überzahlung ist verboten.\n❗ Wenn Sie einen anderen Betrag als <code>{crypto_amount}</code> {crypto_name} senden, gehen Ihre Gelder <b>dauerhaft verloren</b> und <b>können nicht wiederhergestellt</b> werden.\n\nZahlungsstatus: {status}\n⏳ Gültig bis: {payment_lifetime}\n\n<b>Einzahlungsadresse:</b>\n<code>{addr}</code>\n\nℹ️ Dies ist eine eindeutige {crypto_name}-Adresse, die nur für diese Zahlung erstellt wurde.\n✅ Das Guthaben wird innerhalb von 5 Minuten nach Eingang der Transaktion gutgeschrieben.",
     "top_up_balance_request_fiat": "💵 <b>Bitte senden Sie den Betrag, den Sie in <u>{currency_text}</u> aufladen möchten\n⚠️ Achtung! Mindesteinzahlungsbetrag 5 {currency_text}</b>",
     "top_up_balance_invalid_fiat_amount": "⚠️ <b>Ungültiger Betrag.</b>\nBitte senden Sie einen positiven Betrag von <code>5</code> bis unter <code>1000000</code> {currency_text} mit höchstens 2 Dezimalstellen.",
-    "pinned_products": "📌 Sản phẩm nổi bật"
+    "pinned_products": "📌 Sản phẩm nổi bật",
+    "coupon_min_order_not_reached": "❌ This coupon requires a minimum order of {currency_sym}{min_order_amount:,.0f}",
+    "coupon_usage_limit_reached": "❌ This coupon has reached its total usage limit",
+    "coupon_user_limit_reached": "❌ You have reached the usage limit for this coupon",
+    "coupon_payment_scope_not_allowed": "❌ This coupon is not valid for the selected payment method",
+    "coupon_summary": "🎟️ Applied coupon: <code>{coupon_code}</code>\n💸 Discount: <code>{currency_sym}{discount_amount:,.0f}</code>"
   }
 }

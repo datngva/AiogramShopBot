@@ -34,6 +34,10 @@ class Buy(Base):
         back_populates="buy",
         cascade="all, delete-orphan"
     )
+    coupon_usages = relationship(
+        "CouponUsage",
+        cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         CheckConstraint('total_price > 0', name='check_total_price_positive'),

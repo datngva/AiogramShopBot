@@ -1,4 +1,4 @@
-from contextlib import asynccontextmanager
+﻿from contextlib import asynccontextmanager
 from typing import Any
 
 from sqlalchemy import text, Result, CursorResult
@@ -23,7 +23,7 @@ from models.subcategory import Subcategory
 from models.deposit import Deposit
 from models.button_media import ButtonMedia
 from models.payment import Payment
-from models.coupon import Coupon
+from models.coupon import Coupon, CouponUsage
 from models.shipping_option import ShippingOption
 from models.review import Review
 from models.referral import ReferralBonus

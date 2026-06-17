@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -28,6 +28,7 @@ from models.buyItem import BuyItem
 from models.cart import Cart
 from models.cartItem import CartItem
 from models.category import Category
+from models.coupon import Coupon, CouponUsage
 from models.deposit import Deposit
 from models.item import Item
 from models.payment import Payment

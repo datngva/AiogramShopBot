@@ -1,4 +1,4 @@
-from aiogram.types import InlineKeyboardButton
+﻿from aiogram.types import InlineKeyboardButton
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
@@ -59,8 +59,13 @@ class MediaManagementStates(StatesGroup):
 
 
 class CouponsManagementStates(StatesGroup):
-    coupon_name = State()
     coupon_value = State()
+    min_order_amount = State()
+    max_discount_amount = State()
+    usage_limit = State()
+    per_user_limit = State()
+    payment_scope = State()
+    coupon_name = State()
 
 
 class ShippingManagementStates(StatesGroup):

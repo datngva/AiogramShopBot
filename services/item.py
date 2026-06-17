@@ -212,9 +212,16 @@ class ItemService:
         pinned_items = await ItemRepository.get_pinned_items(session)
         kb_builder = InlineKeyboardBuilder()
         default_media = f"0{get_bot_photo_id()}"
+        try:
+            button_media = await ButtonMediaRepository.get_by_button(
+                KeyboardButton.PINNED_PRODUCTS, session
+            )
+            pinned_media_id = button_media.media_id or default_media
+        except Exception:
+            pinned_media_id = default_media
         if not pinned_items:
             caption = "📌 <b>Hiện chưa có sản phẩm nổi bật.</b>\n\nAnh/chị quay lại sau nhé, shop sẽ ghim hàng hot tại đây."
-            return MediaService.convert_to_media(default_media, caption=caption), kb_builder
+            return MediaService.convert_to_media(pinned_media_id, caption=caption), kb_builder
 
         category_map = {
             category.id: category
@@ -239,7 +246,6 @@ class ItemService:
 
         featured_lines: list[str] = []
         seen_subcategories: set[int] = set()
-        button_media_id = None
         for item in pinned_items:
             if item.subcategory_id is None or item.subcategory_id in seen_subcategories:
                 continue
@@ -249,8 +255,6 @@ class ItemService:
             available_qty = await ItemRepository.get_available_qty(item.item_type, item.category_id, item.subcategory_id, session)
             if available_qty <= 0:
                 continue
-            if button_media_id is None and subcategory is not None:
-                button_media_id = subcategory.media_id
             badge = group_badges.get((item.pin_group or "").lower(), "📌 Nổi bật")
             label = item.pin_label or badge
             subcategory_name = subcategory.name if subcategory is not None else f"Sản phẩm #{item.subcategory_id}"
@@ -260,7 +264,7 @@ class ItemService:
                 f"   🗂️ {category_name} | 💰 {config.CURRENCY.get_localized_symbol()}{item.price:,.0f} | 📦 {available_qty}"
             )
             kb_builder.button(
-                text=f"{badge} {subcategory_name}",
+                text=f"📌 {subcategory_name} | {config.CURRENCY.get_localized_symbol()}{item.price:,.0f} | Còn: {available_qty}",
                 callback_data=AllCategoriesCallback.create(
                     level=3,
                     item_type=item.item_type,
@@ -272,7 +276,6 @@ class ItemService:
         kb_builder.adjust(1)
         if not featured_lines:
             caption = "📌 <b>Hiện chưa có sản phẩm nổi bật.</b>\n\nTạm thời các sản phẩm ghim đang hết hàng."
-            return MediaService.convert_to_media(default_media, caption=caption), kb_builder
-        caption = "📌 <b>Sản phẩm nổi bật</b>\n\n" + "\n\n".join(featured_lines)
-        media_id = button_media_id or default_media
-        return MediaService.convert_to_media(media_id, caption=caption), kb_builder
+            return MediaService.convert_to_media(pinned_media_id, caption=caption), kb_builder
+        caption = "📌 <b>Sản phẩm nổi bật</b>\n\n" + "\n\n".join(featured_lines) + "\n\nChọn sản phẩm anh/chị muốn xem:"
+        return MediaService.convert_to_media(pinned_media_id, caption=caption), kb_builder

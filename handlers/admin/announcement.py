@@ -30,6 +30,14 @@ async def send_everyone(**kwargs):
     await state.set_state(AnnouncementStates.announcement_msg)
 
 
+async def pick_product_announcement(**kwargs):
+    callback: CallbackQuery = kwargs.get("callback")
+    session: AsyncSession = kwargs.get("session")
+    language: Language = kwargs.get("language")
+    msg, kb_builder = await AnnouncementService.get_product_announcement_menu(session, language)
+    await callback.message.edit_text(text=msg, reply_markup=kb_builder.as_markup())
+
+
 @announcement_router.message(AdminIdFilter(), StateFilter(AnnouncementStates.announcement_msg))
 async def receive_admin_message(message: Message, state: FSMContext, language: Language):
     await state.clear()
@@ -49,6 +57,13 @@ async def send_generated_msg(**kwargs):
     session: AsyncSession = kwargs.get("session")
     callback_data: AnnouncementCallback = kwargs.get("callback_data")
     language: Language = kwargs.get("language")
+    if callback_data.announcement_type == AnnouncementType.NEW_PRODUCT:
+        media, _ = await ItemService.build_product_announcement_payload(callback_data.item_id, session)
+        kb_builder = AnnouncementsConstants.get_confirmation_builder(callback_data.announcement_type,
+                                                                     language,
+                                                                     item_id=callback_data.item_id)
+        await callback.message.answer_photo(photo=media.media, caption=media.caption, reply_markup=kb_builder.as_markup())
+        return
     kb_builder = AnnouncementsConstants.get_confirmation_builder(callback_data.announcement_type,
                                                                  language)
     messages = await ItemService.create_announcement_message(callback_data.announcement_type, session, language)
@@ -78,7 +93,8 @@ async def announcement_navigation(callback: CallbackQuery,
         0: announcement_menu,
         1: send_everyone,
         2: send_generated_msg,
-        3: send_confirmation
+        3: send_confirmation,
+        4: pick_product_announcement,
     }
 
     current_level_function = levels[current_level]

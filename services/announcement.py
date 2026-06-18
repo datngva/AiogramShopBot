@@ -3,7 +3,7 @@ import logging
 
 import config
 from aiogram.exceptions import TelegramForbiddenError
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, InputMediaPhoto
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -49,10 +49,33 @@ class AnnouncementService:
             return False, False
 
     @staticmethod
+    async def _send_product_announcement_to_user(callback: CallbackQuery,
+                                                 telegram_id: int,
+                                                 media: InputMediaPhoto) -> tuple[bool, bool]:
+        if config.MULTIBOT:
+            sent_count, had_only_forbidden_errors = await MultibotService.send_photo_to_user_verbose(
+                photo=media.media,
+                caption=media.caption,
+                telegram_id=telegram_id
+            )
+            return sent_count > 0, had_only_forbidden_errors
+        try:
+            await callback.bot.send_photo(telegram_id, media.media, caption=media.caption)
+            return True, False
+        except TelegramForbiddenError as exception:
+            logging.error(f"TelegramForbiddenError: {exception.message}")
+            return False, True
+        except Exception as exception:
+            logging.error(exception)
+            return False, False
+
+    @staticmethod
     async def get_announcement_menu(language: Language) -> tuple[str, InlineKeyboardBuilder]:
         kb_builder = InlineKeyboardBuilder()
         kb_builder.button(text=get_text(language, BotEntity.ADMIN, "send_everyone"),
                           callback_data=AnnouncementCallback.create(1))
+        kb_builder.button(text=get_text(language, BotEntity.ADMIN, "new_product_announcement"),
+                          callback_data=AnnouncementCallback.create(4))
         kb_builder.button(text=get_text(language, BotEntity.ADMIN, "restocking"),
                           callback_data=AnnouncementCallback.create(2, AnnouncementType.RESTOCKING))
         kb_builder.button(text=get_text(language, BotEntity.ADMIN, "stock"),
@@ -60,6 +83,30 @@ class AnnouncementService:
         kb_builder.row(AdminConstants.back_to_main_button(language))
         kb_builder.adjust(1)
         return get_text(language, BotEntity.ADMIN, "announcements"), kb_builder
+
+    @staticmethod
+    async def get_product_announcement_menu(session: AsyncSession,
+                                            language: Language) -> tuple[str, InlineKeyboardBuilder]:
+        kb_builder = InlineKeyboardBuilder()
+        products = await ItemRepository.get_announcement_candidates(session)
+        for item in products[:30]:
+            if item.id is None:
+                continue
+            button_text = await ItemService.build_product_announcement_button_text(item.id, session)
+            kb_builder.button(
+                text=button_text,
+                callback_data=AnnouncementCallback.create(
+                    level=2,
+                    announcement_type=AnnouncementType.NEW_PRODUCT,
+                    item_id=item.id,
+                )
+            )
+        kb_builder.button(
+            text=get_text(language, BotEntity.COMMON, "back_button"),
+            callback_data=AnnouncementCallback.create(0)
+        )
+        kb_builder.adjust(1)
+        return get_text(language, BotEntity.ADMIN, "pick_product_for_announcement"), kb_builder
 
     @staticmethod
     async def send_announcement(callback: CallbackQuery,
@@ -80,15 +127,22 @@ class AnnouncementService:
             )
         )
         generated_messages = None
+        product_media = None
         is_generated_announcement = callback_data.announcement_type in (
             AnnouncementType.RESTOCKING,
             AnnouncementType.CURRENT_STOCK
         )
+        is_product_announcement = callback_data.announcement_type == AnnouncementType.NEW_PRODUCT
         if is_generated_announcement:
             generated_messages = await ItemService.create_announcement_message(
                 callback_data.announcement_type,
                 session,
                 language
+            )
+        elif is_product_announcement:
+            product_media, _ = await ItemService.build_product_announcement_payload(
+                callback_data.item_id,
+                session
             )
         for user in active_users:
             try:
@@ -97,6 +151,17 @@ class AnnouncementService:
                         callback,
                         user.telegram_id,
                         generated_messages
+                    )
+                    if is_sent:
+                        counter += 1
+                    elif had_only_forbidden_errors:
+                        user.can_receive_messages = False
+                        await UserRepository.update(user, session)
+                elif is_product_announcement:
+                    is_sent, had_only_forbidden_errors = await AnnouncementService._send_product_announcement_to_user(
+                        callback,
+                        user.telegram_id,
+                        product_media
                     )
                     if is_sent:
                         counter += 1

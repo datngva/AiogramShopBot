@@ -414,5 +414,7 @@
     "coupon_user_limit_reached": "❌ Anh/chị đã dùng hết số lượt cho mã này rồi.",
     "coupon_payment_scope_not_allowed": "❌ Mã này không áp dụng cho hình thức thanh toán đang chọn.",
     "coupon_summary": "🎟️ Mã đã áp dụng: <code>{coupon_code}</code>\n💸 Giảm giá: <code>{currency_sym}{discount_amount:,.0f}</code>"
-  }
+  },
+  "new_product_announcement": "🆕 Thông báo sản phẩm mới",
+  "pick_product_for_announcement": "🛍️ Chọn sản phẩm để gửi thông báo:"
 }

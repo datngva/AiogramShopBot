@@ -195,6 +195,16 @@ class ItemRepository:
         return [ItemDTO.model_validate(item, from_attributes=True) for item in items.scalars().all()]
 
     @staticmethod
+    async def get_announcement_candidates(session: AsyncSession) -> list[ItemDTO]:
+        stmt = (
+            select(Item)
+            .where(Item.is_sold == False)
+            .order_by(Item.is_new.desc(), Item.id.desc())
+        )
+        items = await session_execute(stmt, session)
+        return [ItemDTO.model_validate(item, from_attributes=True) for item in items.scalars().all()]
+
+    @staticmethod
     async def get_availability_by_cart_items(
             cart_items: list,
             session: AsyncSession | Session

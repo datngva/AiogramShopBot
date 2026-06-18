@@ -1,4 +1,4 @@
-﻿from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
@@ -17,11 +17,14 @@ class AdminConstants:
 
 class AnnouncementsConstants:
     @staticmethod
-    def get_confirmation_builder(announcement_type: AnnouncementType, language: Language) -> InlineKeyboardBuilder:
+    def get_confirmation_builder(announcement_type: AnnouncementType,
+                                 language: Language,
+                                 item_id: int | None = None) -> InlineKeyboardBuilder:
         kb_builder = InlineKeyboardBuilder()
         kb_builder.button(text=get_text(language, BotEntity.COMMON, "confirm"),
                           callback_data=AnnouncementCallback.create(level=3,
-                                                                    announcement_type=announcement_type))
+                                                                    announcement_type=announcement_type,
+                                                                    item_id=item_id))
         kb_builder.button(text=get_text(language, BotEntity.COMMON, "cancel"),
                           callback_data=AnnouncementCallback.create(level=0))
         return kb_builder

@@ -14,7 +14,9 @@ from enums.bot_entity import BotEntity
 from enums.item_type import ItemType
 from enums.keyboard_button import KeyboardButton
 from enums.language import Language
+from models.category import CategoryDTO
 from models.item import ItemDTO
+from models.subcategory import SubcategoryDTO
 from repositories.button_media import ButtonMediaRepository
 from repositories.category import CategoryRepository
 from repositories.item import ItemRepository
@@ -117,6 +119,39 @@ class ItemService:
                 ItemService._split_category_into_blocks(header, category_header, subcategory_lines)
             )
         return ItemService._build_announcement_chunks(header, category_blocks)
+
+    @staticmethod
+    async def build_product_announcement_context(item_id: int,
+                                                 session: AsyncSession) -> tuple[ItemDTO, CategoryDTO, SubcategoryDTO]:
+        item = await ItemRepository.get_by_id(item_id, session)
+        category = await CategoryRepository.get_by_id(item.category_id, session)
+        subcategory = await SubcategoryRepository.get_by_id(item.subcategory_id, session)
+        return item, category, subcategory
+
+    @staticmethod
+    async def build_product_announcement_button_text(item_id: int,
+                                                     session: AsyncSession) -> str:
+        item, category, subcategory = await ItemService.build_product_announcement_context(item_id, session)
+        new_badge = "🆕 " if item.is_new else ""
+        return (
+            f"{new_badge}{subcategory.name} | "
+            f"{config.CURRENCY.get_localized_symbol()}{item.price:,.0f} | "
+            f"{category.name}"
+        )
+
+    @staticmethod
+    async def build_product_announcement_payload(item_id: int,
+                                                 session: AsyncSession):
+        item, _, subcategory = await ItemService.build_product_announcement_context(item_id, session)
+        caption = (
+            "🆕 <b>Sản phẩm mới đã lên kệ!</b>\n\n"
+            f"🔦 <b>{subcategory.name}</b>\n"
+            f"💰 Giá: {config.CURRENCY.get_localized_symbol()}{item.price:,.0f}\n\n"
+            f"{item.description}\n\n"
+            "Nhanh tay xem ngay trong shop nhé!"
+        )
+        media = MediaService.convert_to_media(subcategory.media_id, caption=caption)
+        return media, caption
 
     @staticmethod
     async def parse_items_json(path_to_file: str, session: AsyncSession | Session):

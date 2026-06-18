@@ -137,10 +137,17 @@ class AdminMenuCallback(BaseCallback, prefix="admin_menu"):
 
 class AnnouncementCallback(BaseCallback, prefix="announcement"):
     announcement_type: AnnouncementType | None
+    item_id: int | None = None
 
     @staticmethod
-    def create(level: int, announcement_type: AnnouncementType | None = None, page: int = 0):
-        return AnnouncementCallback(level=level, announcement_type=announcement_type, page=page)
+    def create(level: int,
+               announcement_type: AnnouncementType | None = None,
+               item_id: int | None = None,
+               page: int = 0):
+        return AnnouncementCallback(level=level,
+                                    announcement_type=announcement_type,
+                                    item_id=item_id,
+                                    page=page)
 
 
 class InventoryManagementCallback(BaseCallback, SortingCallback, prefix="inventory_management"):

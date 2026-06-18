@@ -408,5 +408,7 @@
     "coupon_user_limit_reached": "❌ You have reached the usage limit for this coupon",
     "coupon_payment_scope_not_allowed": "❌ This coupon is not valid for the selected payment method",
     "coupon_summary": "🎟️ Applied coupon: <code>{coupon_code}</code>\n💸 Discount: <code>{currency_sym}{discount_amount:,.0f}</code>"
-  }
+  },
+  "new_product_announcement": "🆕 New Product Announcement",
+  "pick_product_for_announcement": "🛍️ Pick a product to announce:"
 }
